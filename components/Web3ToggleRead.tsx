@@ -1,22 +1,38 @@
-import { useContractRead } from "wagmi";
+import { useContractRead, useContractEvent } from "wagmi";
 import Web3ToggleWrite from "./Web3ToggleWrite";
-import {CONTRACT_ABI, CONTRACT_ADDRESS} from "../contracts/toggle.js"
+import { CONTRACT_ABI, CONTRACT_ADDRESS } from "../contracts/toggle.js"
+import { useState } from "react";
 
 
 export default function Web3ToggleRead() {
-  const { data, isError, isLoading } = useContractRead({
+  const [status, setStatus] = useState<boolean | null>(null)
+
+  useContractEvent({
+    addressOrName: CONTRACT_ADDRESS,
+    contractInterface: CONTRACT_ABI,
+    eventName: 'statusChange',
+    listener(node, label, owner) {
+      setStatus(node[1])
+    },
+  });
+
+  useContractRead({
     addressOrName: CONTRACT_ADDRESS,
     contractInterface: CONTRACT_ABI,
     functionName: "status",
-    watch: true,
+    onSuccess(data) {
+      console.log(data)
+      setStatus(!!data)
+    }
   });
-  if (isLoading) return <div>Fetching name…</div>;
-  if (isError) return <div>Error fetching name</div>;
+
+
+
   return (
-    
+
     <div>
-      {typeof data === "boolean" && <p>Toggle Status: {data? 'true': 'false'}</p>}
-      {!isLoading && typeof data === "boolean" && <Web3ToggleWrite status={data} />}
+      {typeof status === "boolean" && <p>Toggle Status: {status ? 'true' : 'false'}</p>}
+      {typeof status === "boolean" && <Web3ToggleWrite status={status} />}
     </div>
   );
 }
